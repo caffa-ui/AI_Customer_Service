@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SCRM AI 智能客服工作台">
+    <title>SCRM AI 客服</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <section id="login-view" class="login-page">
+        <div class="login-visual">
+            <div class="brand-mark" aria-hidden="true">S</div>
+            <p class="eyebrow">SCRM AGENT CONSOLE</p>
+            <h1>让每一次客户沟通<br>都有上下文。</h1>
+            <p class="login-copy">销售、售后、工单、订单与知识库，统一进入一个可持续记忆的智能客服入口。</p>
+            <div class="feature-row">
+                <span>PostgreSQL 记忆</span>
+                <span>MySQL 业务数据</span>
+                <span>RAG 知识库</span>
+            </div>
+        </div>
+        <div class="login-panel">
+            <form id="login-form" class="login-card">
+                <div>
+                    <p class="eyebrow dark">SECURE ACCESS</p>
+                    <h2>登录工作台</h2>
+                    <p class="muted">使用 MySQL 用户账号进入你的会话空间。</p>
+                </div>
+                <label>
+                    用户 ID
+                    <input id="login-user" name="username" autocomplete="username" maxlength="64" required placeholder="例如 cli-user">
+                </label>
+                <label>
+                    密码
+                    <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="256" required placeholder="输入登录密码">
+                </label>
+                <button id="login-button" class="primary-button" type="submit">安全登录</button>
+                <p id="login-error" class="form-error" role="alert"></p>
+                <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">查看 API 文档 ↗</a>
+            </form>
+        </div>
+    </section>
+
+    <section id="app-view" class="workspace" hidden>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark small" aria-hidden="true">S</div>
+                <div><strong>SCRM AI</strong><span>智能客服工作台</span></div>
+            </div>
+            <button id="new-chat-button" class="new-chat-button" type="button"><span>＋</span> 新建会话</button>
+            <div class="sidebar-heading"><span>最近会话</span><button id="refresh-list-button" type="button" title="刷新会话">↻</button></div>
+            <nav id="conversation-list" class="conversation-list" aria-label="会话列表"></nav>
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <span class="avatar" id="user-avatar">U</span>
+                    <div><strong id="current-user">-</strong><span>已安全登录</span></div>
+                </div>
+                <div class="footer-actions">
+                    <button id="settings-button" type="button">修改密码</button>
+                    <button id="logout-button" type="button">退出</button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="chat-area">
+            <header class="chat-header">
+                <div>
+                    <p class="eyebrow dark">AI CUSTOMER SERVICE</p>
+                    <h2 id="conversation-title">新会话</h2>
+                </div>
+                <div class="service-state"><i></i><span>服务已连接</span></div>
+            </header>
+            <div id="message-list" class="message-list" aria-live="polite">
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-symbol">✦</div>
+                    <h3>今天想处理什么？</h3>
+                    <p>可以查询商品、库存、促销、订单、物流、工单，或咨询售后知识。</p>
+                    <div class="suggestion-grid">
+                        <button type="button" data-prompt="查询一下我的工单">查询我的工单</button>
+                        <button type="button" data-prompt="推荐一款六千元以内的轻薄办公本">商品推荐</button>
+                        <button type="button" data-prompt="帮我查询最近订单的物流进度">查询物流</button>
+                    </div>
+                </div>
+            </div>
+            <form id="chat-form" class="composer">
+                <textarea id="message-input" rows="1" maxlength="8000" placeholder="输入你的问题，Enter 发送，Shift + Enter 换行" required></textarea>
+                <button id="send-button" type="submit" aria-label="发送消息">发送</button>
+                <p>AI 可能产生误差，关键业务结果请以工具查询数据为准。</p>
+            </form>
+        </main>
+    </section>
+
+    <div id="settings-modal" class="modal-backdrop" hidden>
+        <form id="password-form" class="modal-card">
+            <div class="modal-header"><div><p class="eyebrow dark">ACCOUNT</p><h2>修改密码</h2></div><button id="close-settings" type="button" aria-label="关闭">×</button></div>
+            <p class="muted">新密码需要 12–128 个字符。修改后所有刷新令牌会被撤销，需要重新登录。</p>
+            <label>当前密码<input id="current-password" type="password" autocomplete="current-password" required></label>
+            <label>新密码<input id="new-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label>
+            <label>确认新密码<input id="confirm-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label>
+            <p id="password-error" class="form-error" role="alert"></p>
+            <button class="primary-button" type="submit">更新密码</button>
+        </form>
+    </div>
+    <div id="toast" class="toast" hidden role="status"></div>
+    <script src="/static/app.js" defer></script>
+</body>
+</html>

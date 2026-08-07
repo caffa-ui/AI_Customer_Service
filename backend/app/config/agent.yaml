@@ -1,0 +1,9 @@
+knowledge:
+  repository: rag
+
+memory:
+  min_tokens_to_compress: 3000
+  keep_turns: 10
+  max_summary_chars: 1200
+  recent_context_messages: 20
+  supervisor_context_messages: 6

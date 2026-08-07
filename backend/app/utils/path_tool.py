@@ -1,0 +1,15 @@
+import os
+
+# 获取 app 目录
+def get_project_root()->str:
+    current_file=os.path.abspath(__file__)
+    current_dir=os.path.dirname(current_file)
+    project_root=os.path.dirname(current_dir)
+    return project_root
+
+def get_abs_path(relate_path:str)->str:
+    project_root=get_project_root()
+    return os.path.join(project_root, relate_path)
+
+if __name__=='__main__':
+    print(get_abs_path("backend/audit_flow.py"))

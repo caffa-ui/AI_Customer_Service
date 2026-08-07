@@ -1,0 +1,26 @@
+[
+  {
+    "ticket_id": "TK-10001",
+    "user_id": "cli-user",
+    "ticket_type": "refund",
+    "status": "pending",
+    "created_at": "2026-08-07 10:00:00",
+    "latest_note": "等待售后主管审核"
+  },
+  {
+    "ticket_id": "TK-10002",
+    "user_id": "cli-user",
+    "ticket_type": "logistics",
+    "status": "processing",
+    "created_at": "2026-08-06 15:30:00",
+    "latest_note": "已联系物流服务商核查"
+  },
+  {
+    "ticket_id": "TK-10003",
+    "user_id": "demo-user",
+    "ticket_type": "repair",
+    "status": "resolved",
+    "created_at": "2026-08-05 09:20:00",
+    "latest_note": "已完成返厂维修"
+  }
+]

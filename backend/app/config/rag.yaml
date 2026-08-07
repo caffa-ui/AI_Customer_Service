@@ -1,0 +1,2 @@
+chat_model_name: gemini-3.5-flash
+embedding_model_name: gemini-embedding-2

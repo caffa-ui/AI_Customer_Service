@@ -1,0 +1,62 @@
+[
+  {
+    "order_id": "ORD-20260801",
+    "user_id": "cli-user",
+    "status": "shipped",
+    "created_at": "2026-08-01 09:30:00",
+    "total_amount": 4999.0,
+    "items": [
+      {
+        "product_id": "P-1001",
+        "name": "轻薄商务本 Air 14",
+        "quantity": 1,
+        "unit_price": 4999.0
+      }
+    ],
+    "carrier": "顺丰速运",
+    "tracking_number": "SF1234567890",
+    "logistics_status": "运输中",
+    "latest_logistics": "包裹已到达上海转运中心",
+    "estimated_delivery": "2026-08-08"
+  },
+  {
+    "order_id": "ORD-20260720",
+    "user_id": "cli-user",
+    "status": "completed",
+    "created_at": "2026-07-20 14:10:00",
+    "total_amount": 399.0,
+    "items": [
+      {
+        "product_id": "P-2001",
+        "name": "降噪真无线耳机 Lite",
+        "quantity": 1,
+        "unit_price": 399.0
+      }
+    ],
+    "carrier": "京东物流",
+    "tracking_number": "JD9876543210",
+    "logistics_status": "已签收",
+    "latest_logistics": "本人已签收",
+    "estimated_delivery": "2026-07-22"
+  },
+  {
+    "order_id": "ORD-PRIVATE-01",
+    "user_id": "demo-user",
+    "status": "processing",
+    "created_at": "2026-08-02 11:00:00",
+    "total_amount": 7999.0,
+    "items": [
+      {
+        "product_id": "P-1002",
+        "name": "性能游戏本 Pro 16",
+        "quantity": 1,
+        "unit_price": 7999.0
+      }
+    ],
+    "carrier": "",
+    "tracking_number": "",
+    "logistics_status": "待发货",
+    "latest_logistics": "仓库正在配货",
+    "estimated_delivery": ""
+  }
+]

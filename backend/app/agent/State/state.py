@@ -1,0 +1,31 @@
+from typing import TypedDict, Annotated, Optional, Literal
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
+
+#标签去重
+def add_tags(left:list[str], right:list[str])->list[str]:
+    return list(set(left+right))
+
+class InputState(TypedDict):
+    pass
+
+class OutputState(TypedDict):
+    pass
+
+class PrivateState(TypedDict):
+    pass
+
+class SCRMState(TypedDict):
+    #核心状态，承载聊天记录
+    messages: Annotated[list[BaseMessage], add_messages]
+
+    current_intent: Optional[Literal["sale","support","chat"]]
+
+    support_intent: Optional[Literal["general", "refund"]]
+    refund_status: Optional[Literal["pending", "approved", "rejected"]]
+
+    user_id: str
+    user_name: Optional[str]
+    user_gender: Optional[Literal["male", "female"]]
+    user_tags: Annotated[list[str], add_tags]
+    summary: str
