@@ -3,7 +3,6 @@ from app.utils.path_tool import get_abs_path
 
 
 class Config(dict):
-    """兼容字典取值和项目现有的 config("key") 调用方式。"""
 
     def __call__(self, key: str, default=None):
         if key in self:
