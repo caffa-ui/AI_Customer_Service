@@ -9,7 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
 def create_support_node(tools: Sequence[BaseTool] = ()):
-    """创建可按需绑定业务工具的售后节点。"""
+    """绑定工具的售后节点，官方最推荐的闭包写法，同时传入state，与tools，graph无法识别节点"""
 
     async def support_node_with_tools(state: SCRMState):
         user_name=state.get("user_name") or "未提供"
@@ -53,5 +53,3 @@ def create_support_node(tools: Sequence[BaseTool] = ()):
     return support_node_with_tools
 
 
-# 保留原有导入入口；正式图会通过 create_support_node 绑定工具。
-support_node = create_support_node()
