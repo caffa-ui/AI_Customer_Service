@@ -6,7 +6,7 @@ from app.product.repository import ProductRepository
 
 
 def create_product_repository(mysql_engine: Any | None = None) -> ProductRepository:
-    """创建唯一的生产商品数据源：MySQL。"""
+    """创建记录数据的MySQL引擎"""
     engine = mysql_engine or create_mysql_engine()
     return MySQLProductRepository(
         engine,

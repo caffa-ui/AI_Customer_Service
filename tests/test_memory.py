@@ -14,7 +14,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 from app.agent.memory import MAX_SUMMARY_CHARS, get_memory_summary
 import app.agent.nodes.sale_node as sale_module
 import app.agent.nodes.summarize_node as summarize_module
-import app.agent.nodes.supervisor_node as supervisor_module
+import app.agent.nodes.supervisor_and_chat_node as supervisor_module
 import app.agent.nodes.support_classifier_node as classifier_module
 import app.agent.nodes.support_node as support_module
 

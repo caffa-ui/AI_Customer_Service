@@ -5,7 +5,7 @@ from app.product.service import ProductService
 
 
 def create_product_tools(service: ProductService) -> list[BaseTool]:
-    """为销售智能体创建商品查询工具。"""
+    """销售智能体商品查询工具"""
 
     @tool
     async def search_products(
@@ -52,6 +52,7 @@ def create_product_tools(service: ProductService) -> list[BaseTool]:
         """
         return await service.get_current_promotions(product_id)
 
+    #如果返回有警告不用管，属于是PyCharm静态类型误报
     return [
         search_products,
         get_product_details,

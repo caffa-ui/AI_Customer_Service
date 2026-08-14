@@ -6,6 +6,7 @@ from app.utils.path_tool import get_abs_path
 
 logger = get_logger("prompt_handler")
 
+#内置缓存
 @lru_cache(maxsize=None)
 def _load_prompt_by_key(prompt_key: str) -> str:
     try:
@@ -32,3 +33,6 @@ def load_sale_prompt() -> str:
 
 def load_rag_prompt() -> str:
     return _load_prompt_by_key("rag_prompt")
+
+def load_chat_prompt()->str:
+    return _load_prompt_by_key("chat_prompt")

@@ -46,15 +46,7 @@ def message_to_text(m) -> Optional[str]:
 
 def summarize_node(state: SCRMState):
     """
-    高度定制的记忆压缩节点（最终版：按"完整对话轮次"切割）：
-    由外部条件边触发，流程走到这里时默认已处于 Token 超载状态。
-
-    职责：
-      1. 精准保留最近 KEEP_TURNS 轮完整对话（以"无tool_calls的最终AIMessage"为轮次收尾标志）；
-      2. 将更早的历史消息总结后物理删除；
-      3. 切割点天然落在轮次收尾处，结构上杜绝 tool_calls 与 ToolMessage 被拆断的孤儿问题；
-      4. 保护全局 SystemMessage，绝不误删；
-      5. 对 LLM 调用失败、消息缺失 id 等异常情况做防御，避免死循环或崩溃。
+     按照基本的总结格式，并有基本的防错，减少token消耗的机制
     """
     messages = state.get("messages", [])
     current_summary = state.get("summary", "")

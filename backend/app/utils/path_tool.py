@@ -1,6 +1,5 @@
 import os
 
-# 获取 app 目录
 def get_project_root()->str:
     current_file=os.path.abspath(__file__)
     current_dir=os.path.dirname(current_file)

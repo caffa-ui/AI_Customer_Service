@@ -15,7 +15,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.agent.agent_config.graph import build_graph
 import app.agent.nodes.sale_node as sale_module
-import app.agent.nodes.supervisor_node as supervisor_module
+import app.agent.nodes.supervisor_and_chat_node as supervisor_module
 import app.agent.nodes.support_classifier_node as classifier_module
 import app.agent.nodes.support_node as support_module
 from tests.fakes.business_repositories import build_graph_with_fakes

@@ -9,7 +9,7 @@ from app.utils.prompt_handler import load_sale_prompt
 
 
 def create_sale_node(tools: Sequence[BaseTool] = ()):
-    """创建可按需绑定商品工具的销售节点。"""
+    """绑定商品工具的销售节点"""
 
     async def sale_node_with_tools(state: SCRMState):
         user_tags = state.get("user_tags", [])
@@ -30,8 +30,6 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
         chain = prompt | active_model
 
         recent_messages = get_recent_messages(state)
-
-        print(f"[系统提示] 正在结合画像 (性别:{user_gender}, 标签:{tag_str}) 思考...")
 
         response = await chain.ainvoke({
             "name": user_name,
