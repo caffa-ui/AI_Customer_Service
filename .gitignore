@@ -9,4 +9,3 @@ backend/app/logs/*.log
 backend/app/chroma_db/
 backend/app/md5.txt
 backend/app/data/knowledge/.ingested.json
-CHANGES.md
