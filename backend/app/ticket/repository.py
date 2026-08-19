@@ -5,7 +5,6 @@ from app.ticket.models import Ticket
 
 @runtime_checkable
 class TicketRepository(Protocol):
-    """工单数据源协议，生产环境由 MySQL 实现。"""
 
     async def list_by_user(self, user_id: str) -> list[Ticket]:
         ...

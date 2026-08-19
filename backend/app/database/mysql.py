@@ -17,6 +17,7 @@ def _positive_int_env(name: str, default: int) -> int:
 
 
 def _non_negative_int_env(name: str, default: int) -> int:
+    """考虑到MYSQL_MAX_OVERFLOW可以为0，单独设置"""
     raw_value = (os.getenv(name) or str(default)).strip()
     try:
         value = int(raw_value)
@@ -28,6 +29,7 @@ def _non_negative_int_env(name: str, default: int) -> int:
 
 
 def required_mysql_dsn() -> str:
+    """确保是符合MySQL的URL"""
     dsn = (os.getenv("MYSQL_DSN") or "").strip()
     if not dsn:
         raise RuntimeError("MySQL 配置缺失: MYSQL_DSN")
@@ -44,7 +46,7 @@ def required_mysql_dsn() -> str:
 
 
 def create_mysql_engine() -> AsyncEngine:
-    """创建可由 CLI/FastAPI 生命周期共享的异步 MySQL Engine。"""
+    """创建异步MySQL引擎"""
     dsn = required_mysql_dsn()
     pool_size = _positive_int_env("MYSQL_POOL_SIZE", 5)
     max_overflow = _non_negative_int_env("MYSQL_MAX_OVERFLOW", 10)

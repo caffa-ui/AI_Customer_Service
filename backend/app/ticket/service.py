@@ -6,7 +6,7 @@ logger = get_logger("ticket_service")
 
 
 class TicketService:
-    """在智能体工具与具体数据源之间提供稳定的业务返回结构。"""
+    """在智能体工具与具体数据源之间提供稳定的业务返回结构"""
 
     def __init__(self, repository: TicketRepository):
         self.repository = repository

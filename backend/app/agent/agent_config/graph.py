@@ -68,7 +68,7 @@ def build_graph(
     knowledge_repository: KnowledgeRepository | None = None,
     checkpointer: BaseCheckpointSaver | None = None,
 ):
-    """组装图；Repository 与 Checkpointer 均由 CLI/FastAPI 生命周期注入。"""
+    """组装图:默认checkpointer为抽像，后续传入postpresql组装完成"""
     ticket_repository = ticket_repository or create_ticket_repository()
     product_repository = product_repository or create_product_repository()
     order_repository = order_repository or create_order_repository()
