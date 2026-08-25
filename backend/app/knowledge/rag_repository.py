@@ -7,7 +7,7 @@ from app.rag.vector_store import VectorStoreService
 
 
 class RagKnowledgeRepository:
-    """使用 Google Embedding 与 Chroma 的售后知识 Repository。"""
+    """使用谷歌Embedding与Chroma的售后知识Repository"""
 
     def __init__(
         self,

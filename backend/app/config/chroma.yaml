@@ -1,7 +1,7 @@
-collection_name: agent
+collection_name: agent_chroma
 persist_directory: chroma_db
 k: 3
-min_relevance_score: 0.35
+min_relevance_score: 0.5
 data_path: data/knowledge
 md5_hex_store: data/knowledge/.ingested.json
 allowed_knowledge_file_type: [".txt",".pdf"]

@@ -50,5 +50,3 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
     return sale_node_with_tools
 
 
-# 保留原有导入入口；正式图会通过 create_sale_node 绑定工具。
-sale_node = create_sale_node()

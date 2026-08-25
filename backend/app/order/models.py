@@ -11,7 +11,7 @@ class OrderItem(BaseModel):
 
 
 class Order(BaseModel):
-    """售后工具与不同订单数据源之间的统一订单模型。"""
+    """售后工具与不同订单数据源之间的统一订单模型"""
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
 

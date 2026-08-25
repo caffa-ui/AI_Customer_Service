@@ -17,7 +17,7 @@ from app.agent.State.state import SCRMState
 
 
 def find_cut_off_index(messages: list, keep_turns: int = KEEP_TURNS) -> Optional[int]:
-    """ 获取消息切割的下表 """
+    """获取消息切割的下表"""
     final_ai_count = 0
 
     for i in range(len(messages) - 1, -1, -1):

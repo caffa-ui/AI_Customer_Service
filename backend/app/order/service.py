@@ -6,7 +6,7 @@ logger = get_logger("order_service")
 
 
 class OrderService:
-    """向售后工具提供带用户隔离的订单与物流查询。"""
+    """向售后工具提供带用户隔离的订单与物流查询"""
 
     def __init__(self, repository: OrderRepository):
         self.repository = repository

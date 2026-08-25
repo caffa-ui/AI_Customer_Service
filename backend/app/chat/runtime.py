@@ -169,3 +169,4 @@ async def create_chat_service() -> AsyncIterator[ChatService]:
 
 # 保留旧名称，避免已有 CLI 或外部调用方立即失效。
 create_postgres_chat_service = create_chat_service
+

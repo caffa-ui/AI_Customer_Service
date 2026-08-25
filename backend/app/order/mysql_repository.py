@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from typing import Any
 
+from sqlalchemy import text
+
 from app.order.models import Order, OrderItem
 
 
@@ -20,7 +22,6 @@ class MySQLOrderRepository:
         return str(value)
 
     async def get_by_id(self, order_id: str, user_id: str) -> Order | None:
-        from sqlalchemy import text
 
         async with self.engine.connect() as connection:
             result = await connection.execute(
@@ -52,7 +53,11 @@ class MySQLOrderRepository:
             item_result = await connection.execute(
                 text(
                     """
-                    SELECT product_id, product_name, quantity, unit_price
+                    SELECT
+                        product_id, 
+                        product_name, 
+                        quantity, 
+                        unit_price
                     FROM order_items
                     WHERE order_id = :order_id
                     ORDER BY order_item_id
