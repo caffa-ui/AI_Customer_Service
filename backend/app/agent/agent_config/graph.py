@@ -54,7 +54,7 @@ def route_after_response(state: SCRMState) -> Literal["summarize", "end"]:
 
 
 def route_tool_response(state: SCRMState) -> Literal["tools", "summarize", "end"]:
-    """业务模型发起工具调用时进入对应 ToolNode，否则结束或压缩"""
+    """业务模型发起工具调用时进入对应ToolNode，否则结束或压缩"""
     messages = state.get("messages", [])
     if messages and getattr(messages[-1], "tool_calls", None):
         return "tools"

@@ -128,7 +128,7 @@ class VectorStoreService:
         return True
 
     def load_documents(self) -> dict[str, int]:
-        """增量导入知识目录中的 TXT/PDF"""
+        """增量导入知识目录中的TXT/PDF"""
         data_path = Path(get_abs_path(chroma_config("data_path")))
         manifest_path = Path(get_abs_path(chroma_config("md5_hex_store")))
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,10 +159,6 @@ class VectorStoreService:
             "skipped_files": skipped_files,
             "total_files": len(files),
         }
-
-    def load_document(self) -> dict[str, int]:
-        """兼容旧方法名。"""
-        return self.load_documents()
 
     def similarity_search(
         self,

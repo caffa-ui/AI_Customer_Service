@@ -2,7 +2,7 @@ from app.knowledge.repository import KnowledgeRepository
 
 
 class KnowledgeService:
-    """向售后工具提供稳定的知识检索结果。"""
+    """向售后工具提供稳定的知识检索结果"""
 
     def __init__(self, repository: KnowledgeRepository):
         self.repository = repository
@@ -21,7 +21,7 @@ class KnowledgeService:
                 "message": "请提供需要查询的问题",
             }
 
-        safe_limit = min(max(limit, 1), 5)
+        safe_limit = max(limit, 1)
         try:
             articles = await self.repository.search(
                 normalized_query,
