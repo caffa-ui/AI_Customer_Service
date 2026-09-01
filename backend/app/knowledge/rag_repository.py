@@ -65,12 +65,12 @@ class RagKnowledgeRepository:
                 KnowledgeArticle(
                     article_id=article_id,
                     title=source_name,
-                    category=category.strip() or "RAG 知识库",
+                    category=category.strip() ,
                     content=document.page_content,
                     source_type="rag",
                     source_path=source_name,
                     page=page,
-                    score=max(0.0, min(float(score), 1.0)),
+                    score=max(0.5,score ),
                 )
             )
         return articles

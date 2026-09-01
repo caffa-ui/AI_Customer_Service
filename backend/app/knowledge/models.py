@@ -6,7 +6,7 @@ class KnowledgeArticle(BaseModel):
 
     article_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
-    category: str = Field(min_length=1)
+    category: str = Field(max_length=10)
     content: str = Field(min_length=1)
     keywords: list[str] = Field(default_factory=list)
     source_type: str = "rag"

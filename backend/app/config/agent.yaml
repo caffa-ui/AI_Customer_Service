@@ -7,3 +7,4 @@ memory:
   max_summary_chars: 12000
   recent_context_messages: 20
   supervisor_context_messages: 6
+  agentic_rag_content: 5

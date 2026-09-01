@@ -13,7 +13,8 @@ from app.agent.nodes.supervisor_and_chat_node import chat_node, supervisor_node
 from app.agent.nodes.support_classifier_node import support_classifier_node
 from app.agent.nodes.support_node import create_support_node
 from app.agent.tool.product_tools import create_product_tools
-from app.agent.tool.support_tools import create_knowledge_tools, create_order_tools
+from app.agent.tool.support_tools import  create_order_tools
+from app.agent.tool.agentic_rag_tool import create_knowledge_tools
 from app.agent.tool.ticket_tools import create_ticket_tools
 from app.knowledge.factory import create_knowledge_repository
 from app.knowledge.repository import KnowledgeRepository
@@ -27,6 +28,8 @@ from app.product.service import ProductService
 from app.ticket.factory import create_ticket_repository
 from app.ticket.repository import TicketRepository
 from app.ticket.service import TicketService
+from app.agent.nodes.Rag_agent_node import rag_determine_agent_node
+from app.agent.agent_config.son_rag_graph import rag_build_graph
 
 
 def route_main_intent(state: SCRMState) -> Literal["sale", "support", "chat"]:
@@ -60,6 +63,11 @@ def route_tool_response(state: SCRMState) -> Literal["tools", "summarize", "end"
         return "tools"
     return route_after_response(state)
 
+def route_rag_determine(state: SCRMState) -> Literal["agentic_rag", "support"]:
+    if state.get("rag_support_state") == "yes":
+        return "agentic_rag"
+    return "support"
+
 
 def build_graph(
     ticket_repository: TicketRepository | None = None,
@@ -79,7 +87,6 @@ def build_graph(
     support_tools = [
         *create_ticket_tools(TicketService(ticket_repository)),
         *create_order_tools(OrderService(order_repository)),
-        *create_knowledge_tools(KnowledgeService(knowledge_repository)),
     ]
 
     builder = StateGraph(SCRMState)
@@ -106,6 +113,8 @@ def build_graph(
     )
     builder.add_node("refund_ticket", refund_ticket_node)
     builder.add_node("summarize", summarize_node)
+    builder.add_node("rag_determine", rag_determine_agent_node)
+    builder.add_node("agentic_rag", rag_build_graph(knowledge_repository))
 
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges(
@@ -121,10 +130,21 @@ def build_graph(
         "support_classifier",
         route_support_intent,
         {
-            "general": "support",
+            "general": "rag_determine",
             "refund": "refund_ticket",
         },
     )
+
+    builder.add_conditional_edges(
+        "rag_determine",
+        route_rag_determine,
+        {
+            "agentic_rag": "agentic_rag",
+            "support": "support",
+        },
+    )
+
+    builder.add_edge("agentic_rag", "support")
 
     builder.add_conditional_edges(
         "sale",

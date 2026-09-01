@@ -1,5 +1,8 @@
 from collections.abc import Sequence
+
 from langchain_core.messages import BaseMessage
+from langchain_core.messages import ToolMessage
+
 from app.agent.State.state import SCRMState
 from app.utils.config_handler import agent_config
 
@@ -10,9 +13,8 @@ MIN_TOKENS_TO_COMPRESS = int(_memory_config.get("min_tokens_to_compress", 300000
 KEEP_TURNS = int(_memory_config.get("keep_turns", 10))
 MAX_SUMMARY_CHARS = int(_memory_config.get("max_summary_chars", 12000))
 RECENT_CONTEXT_MESSAGES = int(_memory_config.get("recent_context_messages", 20))
-SUPERVISOR_CONTEXT_MESSAGES = int(
-    _memory_config.get("supervisor_context_messages", 6)
-)
+SUPERVISOR_CONTEXT_MESSAGES = int(_memory_config.get("supervisor_context_messages", 6))
+AGENTIC_GRA_CONTENT = int(_memory_config.get("agentic_rag_content",4))
 
 EMPTY_MEMORY_SUMMARY = "暂无更早的会话记忆"
 
@@ -46,6 +48,24 @@ def messages_to_context(
             text = str(content)
         if not text:
             continue
-        # 避免单条消息无限膨胀，主要防止如图片转换的纯文本造成token浪费，只要读取其文本前部分即可
         lines.append(f"{message.type}: {text[:500]}")
     return "\n".join(lines) or "暂无近期上下文"
+
+def exclude_tools_content(
+        messages: Sequence[BaseMessage],
+        limit: int = AGENTIC_GRA_CONTENT
+) -> str:
+    selected = messages[-limit:] if limit>0 else []
+    lines: list[str] = []
+
+    for message in selected:
+        if isinstance(message, ToolMessage):
+            continue
+        if message.content and isinstance(message.content,str):
+            content = message.content.strip()
+        else:
+            continue
+        lines.append(f"{message.type}: {content}")
+
+    return "\n".join(lines) or "暂无对话内容"
+

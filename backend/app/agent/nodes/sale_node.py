@@ -23,7 +23,7 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history")
+            MessagesPlaceholder(variable_name="recent_messages")
         ])
 
         active_model = llm.bind_tools(list(tools)) if tools else llm
@@ -36,7 +36,7 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
             "gender_info": user_gender,
             "tags_str": tag_str,
             "memory_summary": memory_summary,
-            "chat_history": recent_messages
+            "recent_messages": recent_messages
         })
 
         if response.content:

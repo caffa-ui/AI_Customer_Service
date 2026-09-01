@@ -1,4 +1,4 @@
-collection_name: agent_chroma
+collection_name: support_chroma
 persist_directory: chroma_db
 k: 3
 min_relevance_score: 0.5

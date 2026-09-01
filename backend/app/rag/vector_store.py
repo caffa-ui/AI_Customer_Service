@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.rag.factory import get_embedding_model
-from app.utils.config_handler import chroma_config
+from app.utils.config_handler import chroma_config,rag_config
 from app.utils.file_handler import get_file_md5_hex, pdf_loader, txt_loader
 from app.utils.logger_handler import get_logger
 from app.utils.path_tool import get_abs_path
@@ -41,12 +41,6 @@ class VectorStoreService:
 
     # 兼容旧测试与旧调用方；正式导入使用更明确的 _load_file_suffix。
     _load_file = _load_file_suffix
-
-    def get_retriever(self):
-        """保留旧式检索器入口，供 RagSummarizeService 等调用方使用。"""
-        return self.vector_store.as_retriever(
-            search_kwargs={"k": chroma_config("k")}
-        )
 
     @staticmethod
     def _read_manifest(path: Path) -> dict[str, str]:
@@ -163,7 +157,7 @@ class VectorStoreService:
     def similarity_search(
         self,
         query: str,
-        limit: int = 3,
+        limit: int = rag_config("retrieve_limit"),
     ) -> list[tuple[Document, float]]:
         results = self.vector_store.similarity_search_with_relevance_scores(
             query,
@@ -176,6 +170,7 @@ class VectorStoreService:
             for document, score in results
             if score >= min_score
         ]
+
 
     def close(self) -> None:
         return None

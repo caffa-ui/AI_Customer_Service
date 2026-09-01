@@ -11,13 +11,15 @@ from langchain_core.messages import HumanMessage
 
 
 #主管节点
-def supervisor_node(state:SCRMState):
+async def supervisor_node(state:SCRMState):
     chat_history=state.get("messages",[])
 
-    #获取用户最新输入,且确保是用户发出的最新消息
-    latest_user_input = next(
-    (m.content for m in reversed(chat_history) if isinstance(m, HumanMessage)
-     ),"")
+    latest_user_input = ""
+
+    for message in reversed(chat_history):
+        if isinstance(message, HumanMessage):
+            latest_user_input = message.content
+            break
 
     user_tags=state.get("user_tags",[])
     gender_info=state.get("user_gender","未知")
@@ -38,7 +40,7 @@ def supervisor_node(state:SCRMState):
 
     chain= prompt | llm
 
-    response = chain.invoke({
+    response = await chain.ainvoke({
         #将列表转换成字符串
         "tags": ", ".join(user_tags) if user_tags else "None",
         "gender": gender_info,
@@ -47,7 +49,7 @@ def supervisor_node(state:SCRMState):
         "input": latest_user_input
     })
 
-    #出错点，要全转小写
+    #全转小写
     intent=response.content.strip().lower()
 
     if intent not in ["sale","support","chat"]:
@@ -60,7 +62,7 @@ def supervisor_node(state:SCRMState):
 
 
 #闲聊节点
-def chat_node(state: SCRMState):
+async def chat_node(state: SCRMState):
     """
     闲聊智能体:主要提供情绪价值，并高情商地将话题引导回商品转化或服务上。
     """
@@ -85,7 +87,7 @@ def chat_node(state: SCRMState):
 
     print(f"[系统提示] 正在结合画像 (性别:{user_gender}, 标签:{tag_str}) 思考...")
 
-    response = chain.invoke({
+    response = await chain.ainvoke({
         "name": user_name,
         "gender_info": user_gender,
         "tags_str": tag_str,

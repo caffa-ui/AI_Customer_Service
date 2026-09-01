@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -81,12 +82,12 @@ class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
 
         sale_model = RecordingChatModel(responses=["sale-ok"])
         sale_module.llm = sale_model
-        await sale_module.sale_node(state)
+        await sale_module.create_sale_node()(state)
         self.assertIn("用户预算 5000 元", prompt_text(sale_model))
 
         chat_model = RecordingChatModel(responses=["chat-ok"])
         supervisor_module.llm = chat_model
-        supervisor_module.chat_node(state)
+        await supervisor_module.chat_node(state)
         self.assertIn("用户预算 5000 元", prompt_text(chat_model))
 
         support_model = RecordingChatModel(responses=["support-ok"])
@@ -100,7 +101,7 @@ class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
 
         supervisor_model = RecordingChatModel(responses=["sale"])
         supervisor_module.llm = supervisor_model
-        result = supervisor_module.supervisor_node(state)
+        result = await supervisor_module.supervisor_node(state)
         text = prompt_text(supervisor_model)
         self.assertEqual(result["current_intent"], "sale")
         self.assertIn("用户预算 5000 元", text)
@@ -108,7 +109,7 @@ class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
 
         classifier_model = RecordingChatModel(responses=["general"])
         classifier_module.llm = classifier_model
-        result = classifier_module.support_classifier_node(state)
+        result = await classifier_module.support_classifier_node(state)
         text = prompt_text(classifier_model)
         self.assertEqual(result["support_intent"], "general")
         self.assertIn("用户预算 5000 元", text)
@@ -170,7 +171,10 @@ class SummarizeMemoryTests(unittest.TestCase):
             "summary": "之前已知用户预算 5000 元。",
         }
 
-        result = summarize_module.summarize_node(state)
+        with patch.object(
+            summarize_module, "MIN_TOKENS_TO_COMPRESS", 1
+        ):
+            result = summarize_module.summarize_node(state)
         text = prompt_text(model)
 
         self.assertIn("tool_result(工具已确认)", text)
