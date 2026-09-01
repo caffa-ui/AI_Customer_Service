@@ -1,16 +1,18 @@
 import json
 import os
-from typing import Any
+from typing import Any,Mapping
 
 from app.product.models import Product
 from app.product.search import rank_products
 
+from sqlalchemy import text
 
 class MySQLProductRepository:
     def __init__(self, engine: Any, *, owns_engine: bool = False):
         self.engine = engine
         self._owns_engine = owns_engine
 
+    #静态装饰器
     @staticmethod
     def _json_dict(value: Any) -> dict[str, str]:
         if value is None:
@@ -29,10 +31,11 @@ class MySQLProductRepository:
             raise ValueError("商品 keywords 必须是 JSON 数组")
         return [str(item) for item in parsed]
 
+    #直接调用类本身，在没有实例存在的时候，把原始数据变成一个新实例，简易去了解下@staticmethod
     @classmethod
     def _to_product(
         cls,
-        row: Any,
+        row: Mapping[str, Any],
         promotions: list[str] | None = None,
     ) -> Product:
         return Product(
@@ -55,12 +58,13 @@ class MySQLProductRepository:
         max_price: float | None = None,
         limit: int = 5,
     ) -> list[Product]:
-        from sqlalchemy import text
+
 
         conditions = ["p.is_active = TRUE"]
         parameters: dict[str, Any] = {}
         if category.strip():
             conditions.append("p.category LIKE :category")
+            #通配符更简便
             parameters["category"] = f"%{category.strip()}%"
         if min_price is not None:
             conditions.append("p.price >= :min_price")
@@ -70,7 +74,7 @@ class MySQLProductRepository:
             parameters["max_price"] = max_price
 
         raw_candidate_limit = (
-            os.getenv("MYSQL_PRODUCT_CANDIDATE_LIMIT") or "1000"
+            os.getenv("MYSQL_PRODUCT_CANDIDATE_LIMIT") or "5"
         ).strip()
         try:
             candidate_limit = int(raw_candidate_limit)
@@ -116,7 +120,7 @@ class MySQLProductRepository:
         )
 
     async def get_by_id(self, product_id: str) -> Product | None:
-        from sqlalchemy import text
+
 
         async with self.engine.connect() as connection:
             result = await connection.execute(
@@ -147,10 +151,10 @@ class MySQLProductRepository:
 
             promotion_result = await connection.execute(
                 text(
-                    """
+                    f"""
                     SELECT description
                     FROM product_promotions
-                    WHERE product_id = :product_id
+                    WHERE product_id = {product_id}
                       AND is_active = TRUE
                       AND (start_at IS NULL OR start_at <= UTC_TIMESTAMP(6))
                       AND (end_at IS NULL OR end_at >= UTC_TIMESTAMP(6))

@@ -9,11 +9,12 @@ from app.agent.State.state import SCRMState
 from app.agent.nodes.refund_ticket_node import refund_ticket_node
 from app.agent.nodes.sale_node import create_sale_node
 from app.agent.nodes.summarize_node import MIN_TOKENS_TO_COMPRESS, summarize_node
-from app.agent.nodes.supervisor_node import chat_node, supervisor_node
+from app.agent.nodes.supervisor_and_chat_node import chat_node, supervisor_node
 from app.agent.nodes.support_classifier_node import support_classifier_node
 from app.agent.nodes.support_node import create_support_node
 from app.agent.tool.product_tools import create_product_tools
-from app.agent.tool.support_tools import create_knowledge_tools, create_order_tools
+from app.agent.tool.support_tools import  create_order_tools
+from app.agent.tool.agentic_rag_tool import create_knowledge_tools
 from app.agent.tool.ticket_tools import create_ticket_tools
 from app.knowledge.factory import create_knowledge_repository
 from app.knowledge.repository import KnowledgeRepository
@@ -27,10 +28,12 @@ from app.product.service import ProductService
 from app.ticket.factory import create_ticket_repository
 from app.ticket.repository import TicketRepository
 from app.ticket.service import TicketService
+from app.agent.nodes.Rag_agent_node import rag_determine_agent_node
+from app.agent.agent_config.son_rag_graph import rag_build_graph
 
 
 def route_main_intent(state: SCRMState) -> Literal["sale", "support", "chat"]:
-    """根据主管节点的分类结果路由。"""
+    """根据主管节点的分类结果路由"""
     intent = state.get("current_intent")
     if intent in {"sale", "support", "chat"}:
         return intent
@@ -38,7 +41,7 @@ def route_main_intent(state: SCRMState) -> Literal["sale", "support", "chat"]:
 
 
 def route_support_intent(state: SCRMState) -> Literal["general", "refund"]:
-    """根据售后细分结果路由。"""
+    """根据售后细分结果路由"""
     intent = state.get("support_intent")
     if intent in {"general", "refund"}:
         return intent
@@ -46,21 +49,24 @@ def route_support_intent(state: SCRMState) -> Literal["general", "refund"]:
 
 
 def route_after_response(state: SCRMState) -> Literal["summarize", "end"]:
-    """仅在消息达到压缩阈值时进入摘要节点。"""
+    """在消息达到压缩阈值时进入总结摘要节点"""
     messages = state.get("messages", [])
     if count_tokens_approximately(messages) >= MIN_TOKENS_TO_COMPRESS:
         return "summarize"
     return "end"
 
 
-def route_tool_response(
-    state: SCRMState,
-) -> Literal["tools", "summarize", "end"]:
-    """业务模型发起工具调用时进入对应 ToolNode，否则结束或压缩。"""
+def route_tool_response(state: SCRMState) -> Literal["tools", "summarize", "end"]:
+    """业务模型发起工具调用时进入对应ToolNode，否则结束或压缩"""
     messages = state.get("messages", [])
     if messages and getattr(messages[-1], "tool_calls", None):
         return "tools"
     return route_after_response(state)
+
+def route_rag_determine(state: SCRMState) -> Literal["agentic_rag", "support"]:
+    if state.get("rag_support_state") == "yes":
+        return "agentic_rag"
+    return "support"
 
 
 def build_graph(
@@ -70,17 +76,17 @@ def build_graph(
     knowledge_repository: KnowledgeRepository | None = None,
     checkpointer: BaseCheckpointSaver | None = None,
 ):
-    """组装图；Repository 与 Checkpointer 均由 CLI/FastAPI 生命周期注入。"""
+    """组装图:默认checkpointer为抽像，后续传入postpresql组装完成"""
     ticket_repository = ticket_repository or create_ticket_repository()
     product_repository = product_repository or create_product_repository()
     order_repository = order_repository or create_order_repository()
     knowledge_repository = knowledge_repository or create_knowledge_repository()
 
+    #下面出现的警告不影响图的运行，主要原因是PyCharm静态类型误报，忽略即可
     product_tools = create_product_tools(ProductService(product_repository))
     support_tools = [
         *create_ticket_tools(TicketService(ticket_repository)),
         *create_order_tools(OrderService(order_repository)),
-        *create_knowledge_tools(KnowledgeService(knowledge_repository)),
     ]
 
     builder = StateGraph(SCRMState)
@@ -91,6 +97,7 @@ def build_graph(
         "sale_tools",
         ToolNode(
             product_tools,
+            #如果这里报警告，可以不用管这个警告，这是静态分析还没跟上真实解释器环境，如有疑惑可以查看ToolNode源码
             handle_tool_errors="商品查询工具暂时不可用，请稍后重试。",
         ),
     )
@@ -106,6 +113,8 @@ def build_graph(
     )
     builder.add_node("refund_ticket", refund_ticket_node)
     builder.add_node("summarize", summarize_node)
+    builder.add_node("rag_determine", rag_determine_agent_node)
+    builder.add_node("agentic_rag", rag_build_graph(knowledge_repository))
 
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges(
@@ -121,10 +130,21 @@ def build_graph(
         "support_classifier",
         route_support_intent,
         {
-            "general": "support",
+            "general": "rag_determine",
             "refund": "refund_ticket",
         },
     )
+
+    builder.add_conditional_edges(
+        "rag_determine",
+        route_rag_determine,
+        {
+            "agentic_rag": "agentic_rag",
+            "support": "support",
+        },
+    )
+
+    builder.add_edge("agentic_rag", "support")
 
     builder.add_conditional_edges(
         "sale",

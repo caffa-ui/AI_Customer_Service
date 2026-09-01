@@ -6,7 +6,7 @@ logger = get_logger("product_service")
 
 
 class ProductService:
-    """向销售工具提供稳定、安全的商品查询返回结构。"""
+    """向销售工具返回查询的商品"""
 
     def __init__(self, repository: ProductRepository):
         self.repository = repository

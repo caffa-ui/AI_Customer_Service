@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
@@ -15,10 +16,17 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.agent.agent_config.graph import build_graph
 import app.agent.nodes.sale_node as sale_module
-import app.agent.nodes.supervisor_node as supervisor_module
+import app.agent.nodes.supervisor_and_chat_node as supervisor_module
 import app.agent.nodes.support_classifier_node as classifier_module
 import app.agent.nodes.support_node as support_module
-from tests.fakes.business_repositories import build_graph_with_fakes
+import app.agent.nodes.Rag_agent_node as rag_module
+from app.knowledge.models import KnowledgeArticle
+from tests.fakes.business_repositories import (
+    FakeOrderRepository,
+    FakeProductRepository,
+    FakeTicketRepository,
+    build_graph_with_fakes,
+)
 
 graph = build_graph_with_fakes(build_graph)
 
@@ -98,6 +106,7 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_general_support_route(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
         classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeListChatModel(responses=["support-ok"])
 
         result = await graph.ainvoke(self.state("请查询物流"))
@@ -117,6 +126,7 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_ticket_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
         classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -150,6 +160,7 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_order_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
         classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -180,6 +191,7 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_list_my_tickets_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
         classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -206,6 +218,64 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(tool_messages), 1)
         self.assertIn('"count": 2', tool_messages[0].content)
         self.assertEqual(result["messages"][-1].content, "您当前有 2 条工单。")
+
+    async def test_agentic_rag_is_used_before_support(self):
+        class CountingKnowledgeRepository:
+            def __init__(self):
+                self.search_calls = 0
+
+            async def search(self, query, category="", limit=3):
+                self.search_calls += 1
+                return [
+                    KnowledgeArticle(
+                        article_id="rag-test-1",
+                        title="蓝牙耳机排障",
+                        category=category,
+                        content="删除旧配对记录后重新搜索，仍失败时重置耳机。",
+                        source_type="test_fake",
+                    )
+                ][:limit]
+
+            async def close(self):
+                return None
+
+        knowledge_repository = CountingKnowledgeRepository()
+        integrated_graph = build_graph(
+            ticket_repository=FakeTicketRepository(),
+            product_repository=FakeProductRepository(),
+            order_repository=FakeOrderRepository(),
+            knowledge_repository=knowledge_repository,
+        )
+        supervisor_module.llm = FakeListChatModel(responses=["support"])
+        classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(
+            responses=["yes", "蓝牙耳机连接故障排查", "yes"]
+        )
+        support_module.llm = ToolAwareFakeListChatModel(responses=["rag-support-ok"])
+
+        consumed_documents = []
+        original_formatter = support_module.format_rag_documents
+
+        def capture_documents(documents):
+            consumed_documents.extend(documents)
+            return original_formatter(documents)
+
+        with patch.object(
+            support_module,
+            "format_rag_documents",
+            side_effect=capture_documents,
+        ):
+            result = await integrated_graph.ainvoke(
+                self.state("蓝牙耳机连接不上", user_id="cli-user")
+            )
+
+        self.assertEqual(knowledge_repository.search_calls, 1)
+        self.assertEqual(consumed_documents[0]["article_id"], "rag-test-1")
+        self.assertEqual(result["rag_support_state"], "yes")
+        self.assertEqual(result["rag_grade"], "yes")
+        self.assertEqual(result["rag_query"], "蓝牙耳机连接故障排查")
+        self.assertEqual(result["rag_retrieve_docs"][0]["article_id"], "rag-test-1")
+        self.assertEqual(result["messages"][-1].content, "rag-support-ok")
 
 
 if __name__ == "__main__":

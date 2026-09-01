@@ -1,25 +1,19 @@
-from typing import Any
+from typing import Any,Mapping
 from uuid import uuid4
 
 from app.ticket.models import Ticket
 
+from sqlalchemy import text
+
 
 class MySQLTicketRepository:
-    """
-    MySQL 工单仓库参考实现。
-
-    默认表名和字段仅作示例，接入方只需修改本文件的 SQL 和字段映射，
-    不需要修改智能体、工具或 LangGraph。
-    """
-
-    persistence_mode = "database"
 
     def __init__(self, engine: Any, *, owns_engine: bool = False):
         self.engine = engine
         self._owns_engine = owns_engine
 
     @staticmethod
-    def _to_ticket(row: Any) -> Ticket:
+    def _to_ticket(row: Mapping[str, Any]) -> Ticket:
         return Ticket(
             ticket_id=str(row["ticket_id"]),
             user_id=str(row["user_id"]),
@@ -32,7 +26,6 @@ class MySQLTicketRepository:
         )
 
     async def list_by_user(self, user_id: str) -> list[Ticket]:
-        from sqlalchemy import text
 
         query = text(
             """
@@ -56,7 +49,6 @@ class MySQLTicketRepository:
             return [self._to_ticket(row) for row in result.mappings().all()]
 
     async def get_by_id(self, ticket_id: str, user_id: str) -> Ticket | None:
-        from sqlalchemy import text
 
         query = text(
             """
@@ -88,7 +80,6 @@ class MySQLTicketRepository:
         subject: str,
         description: str,
     ) -> Ticket:
-        from sqlalchemy import text
 
         ticket_id = f"TK-{uuid4().hex.upper()}"
         ticket_type = "support"

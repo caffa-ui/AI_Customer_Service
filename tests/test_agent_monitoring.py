@@ -18,9 +18,10 @@ BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from app.agent.agent_config.graph import build_graph
-import app.agent.nodes.supervisor_node as supervisor_module
+import app.agent.nodes.supervisor_and_chat_node as supervisor_module
 import app.agent.nodes.support_classifier_node as classifier_module
 import app.agent.nodes.support_node as support_module
+import app.agent.nodes.Rag_agent_node as rag_module
 from app.chat.service import ChatService
 from app.conversation.in_memory_repository import InMemoryConversationRepository
 from app.middleware.agent_monitoring import AgentMonitoringCallback
@@ -158,15 +159,18 @@ class AgentMonitoringIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.original_supervisor_llm = supervisor_module.llm
         self.original_classifier_llm = classifier_module.llm
         self.original_support_llm = support_module.llm
+        self.original_rag_llm = rag_module.llm
 
     def tearDown(self):
         supervisor_module.llm = self.original_supervisor_llm
         classifier_module.llm = self.original_classifier_llm
         support_module.llm = self.original_support_llm
+        rag_module.llm = self.original_rag_llm
 
     async def test_toolnode_events_inherit_request_callback(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
         classifier_module.llm = FakeListChatModel(responses=["general"])
+        rag_module.llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(

@@ -7,7 +7,8 @@ from langchain_core.documents import Document
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
-from app.agent.tool.support_tools import create_knowledge_tools, create_order_tools
+from app.agent.tool.agentic_rag_tool import create_knowledge_tools
+from app.agent.tool.support_tools import create_order_tools
 from app.knowledge.rag_repository import RagKnowledgeRepository
 from app.knowledge.service import KnowledgeService
 from app.order.service import OrderService

@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Ticket(BaseModel):
-    """智能体与不同工单数据源之间的统一工单模型。"""
+    """智能体与不同工单数据库之间的统一工单模型"""
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
 

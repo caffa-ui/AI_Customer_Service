@@ -9,7 +9,7 @@ from app.utils.prompt_handler import load_sale_prompt
 
 
 def create_sale_node(tools: Sequence[BaseTool] = ()):
-    """创建可按需绑定商品工具的销售节点。"""
+    """绑定商品工具的销售节点"""
 
     async def sale_node_with_tools(state: SCRMState):
         user_tags = state.get("user_tags", [])
@@ -23,7 +23,7 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history")
+            MessagesPlaceholder(variable_name="recent_messages")
         ])
 
         active_model = llm.bind_tools(list(tools)) if tools else llm
@@ -31,14 +31,12 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
 
         recent_messages = get_recent_messages(state)
 
-        print(f"[系统提示] 正在结合画像 (性别:{user_gender}, 标签:{tag_str}) 思考...")
-
         response = await chain.ainvoke({
             "name": user_name,
             "gender_info": user_gender,
             "tags_str": tag_str,
             "memory_summary": memory_summary,
-            "chat_history": recent_messages
+            "recent_messages": recent_messages
         })
 
         if response.content:
@@ -52,5 +50,3 @@ def create_sale_node(tools: Sequence[BaseTool] = ()):
     return sale_node_with_tools
 
 
-# 保留原有导入入口；正式图会通过 create_sale_node 绑定工具。
-sale_node = create_sale_node()

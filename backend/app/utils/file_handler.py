@@ -29,23 +29,6 @@ def get_file_md5_hex(filepath: str):
         logger.error(f"计算文件{filepath}md5失败,{str(e)}")
         return None
 
-def listdir_with_allowed_type(path:str,allowed_types: str | tuple[str, ...]):
-    files = []
-
-    if not os.path.isdir(path):
-        logger.error(f"[listdir_with_allowed_type]{path}不是文件夹")
-        return files
-
-    if isinstance(allowed_types, list):
-        allowed_types = tuple(allowed_types)
-
-    #  遍历指定文件夹，筛选出符合特定后缀名要求的文件，并将它们的完整路径存入一个列表
-    for f in os.listdir(path):
-        if f.endswith(allowed_types):
-            files.append(os.path.join(path,f))
-
-    return files
-
 def pdf_loader(file_path:str,password:str=None)->list[Document]:
     return PyPDFLoader(file_path,password).load()
 

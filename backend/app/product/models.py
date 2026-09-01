@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Product(BaseModel):
-    """销售工具与不同商品数据源之间的统一商品模型。"""
+    """销售工具中默认不同商品之间的统一商品模型"""
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
 
@@ -10,6 +10,7 @@ class Product(BaseModel):
     name: str = Field(min_length=1)
     category: str = Field(min_length=1)
     price: float = Field(ge=0)
+    #介绍
     summary: str = ""
     specifications: dict[str, str] = Field(default_factory=dict)
     stock: int = Field(default=0, ge=0)

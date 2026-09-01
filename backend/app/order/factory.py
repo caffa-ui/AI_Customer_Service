@@ -6,7 +6,7 @@ from app.order.repository import OrderRepository
 
 
 def create_order_repository(mysql_engine: Any | None = None) -> OrderRepository:
-    """创建唯一的生产订单数据源：MySQL。"""
+    """创建生产订单的数据库MySQL"""
     engine = mysql_engine or create_mysql_engine()
     return MySQLOrderRepository(
         engine,

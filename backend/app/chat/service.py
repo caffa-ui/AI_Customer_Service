@@ -187,6 +187,12 @@ class ChatService:
                         "current_intent": None,
                         "support_intent": None,
                         "refund_status": None,
+                        "rag_query": None,
+                        "rewrite_test": 0,
+                        "rag_support_state": None,
+                        "rag_retrieve_docs": [],
+                        "rag_grade": None,
+                        "rag_retrieve_error": None
                     }
                     resolved_user_name = (
                         user_name.strip() or None

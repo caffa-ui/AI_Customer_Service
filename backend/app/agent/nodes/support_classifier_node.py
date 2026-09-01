@@ -4,7 +4,7 @@ from app.agent.agent_config.llm_config import llm
 from app.agent.memory import get_memory_summary, messages_to_context
 from app.agent.State.state import SCRMState
 
-def support_classifier_node(state: SCRMState):
+async def support_classifier_node(state: SCRMState):
     chat_history = state.get("messages", [])
     latest_user_input = next(
         (m.content for m in reversed(chat_history) if isinstance(m, HumanMessage)), ""
@@ -36,13 +36,16 @@ def support_classifier_node(state: SCRMState):
         ("human", "用户最新输入: {input}")
     ])
 
-    response = (prompt | llm).invoke(
+    chain = prompt | llm
+
+    response = await chain.ainvoke(
         {
             "input": latest_user_input,
             "memory_summary": memory_summary,
             "recent_context": recent_context,
         }
     )
+
     intent = response.content.strip().lower()
 
     if intent not in ["refund", "general"]:

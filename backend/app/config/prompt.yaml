@@ -2,3 +2,4 @@ supervisor_prompt: prompt/supervisor_prompt.txt
 support_prompt: prompt/support_prompt.txt
 sale_prompt: prompt/sale_prompt.txt
 rag_prompt: prompt/rag_prompt.txt
+chat_prompt: prompt/chat_prompt.txt

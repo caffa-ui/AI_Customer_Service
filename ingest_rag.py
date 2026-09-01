@@ -10,12 +10,13 @@ from app.rag.vector_store import VectorStoreService
 
 
 def main() -> None:
-    """将知识目录中的 TXT/PDF 增量写入本地 Chroma。"""
+    """将知识目录中的TXT/PDF增量写入本地 Chroma。"""
     vector_store = VectorStoreService()
     try:
         result = vector_store.load_documents()
-    finally:
-        vector_store.close()
+    except Exception as e:
+        print(f"新增TXT/PDF文档写入本地Chroma失败:{e}")
+        raise
 
     print(
         "RAG 知识导入完成："
