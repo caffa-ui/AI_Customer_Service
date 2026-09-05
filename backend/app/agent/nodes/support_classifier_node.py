@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
-from app.agent.agent_config.llm_config import llm
+from app.agent.agent_config.llm_config import small_llm
 from app.agent.memory import get_memory_summary, messages_to_context
 from app.agent.State.state import SCRMState
 
@@ -36,7 +36,7 @@ async def support_classifier_node(state: SCRMState):
         ("human", "用户最新输入: {input}")
     ])
 
-    chain = prompt | llm
+    chain = prompt | small_llm
 
     response = await chain.ainvoke(
         {

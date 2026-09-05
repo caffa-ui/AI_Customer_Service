@@ -157,20 +157,22 @@ class AgentMonitoringIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.original_supervisor_llm = supervisor_module.llm
-        self.original_classifier_llm = classifier_module.llm
+        self.original_classifier_llm = classifier_module.small_llm
         self.original_support_llm = support_module.llm
-        self.original_rag_llm = rag_module.llm
+        self.original_rag_llm = rag_module.small_llm
+        self.original_chat_llm = supervisor_module.small_llm
 
     def tearDown(self):
         supervisor_module.llm = self.original_supervisor_llm
-        classifier_module.llm = self.original_classifier_llm
+        classifier_module.small_llm = self.original_classifier_llm
         support_module.llm = self.original_support_llm
-        rag_module.llm = self.original_rag_llm
+        rag_module.small_llm = self.original_rag_llm
+        supervisor_module.small_llm = self.original_chat_llm
 
     async def test_toolnode_events_inherit_request_callback(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(responses=["no"])
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(

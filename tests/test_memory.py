@@ -67,14 +67,16 @@ def state_with_memory() -> dict:
 class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.original_sale_llm = sale_module.llm
+        self.original_chat_llm = supervisor_module.small_llm
         self.original_supervisor_llm = supervisor_module.llm
-        self.original_classifier_llm = classifier_module.llm
+        self.original_classifier_llm = classifier_module.small_llm
         self.original_support_llm = support_module.llm
 
     def tearDown(self):
         sale_module.llm = self.original_sale_llm
+        supervisor_module.small_llm = self.original_chat_llm
         supervisor_module.llm = self.original_supervisor_llm
-        classifier_module.llm = self.original_classifier_llm
+        classifier_module.small_llm = self.original_classifier_llm
         support_module.llm = self.original_support_llm
 
     async def test_sale_chat_and_support_receive_long_term_summary(self):
@@ -86,7 +88,7 @@ class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("用户预算 5000 元", prompt_text(sale_model))
 
         chat_model = RecordingChatModel(responses=["chat-ok"])
-        supervisor_module.llm = chat_model
+        supervisor_module.small_llm = chat_model
         await supervisor_module.chat_node(state)
         self.assertIn("用户预算 5000 元", prompt_text(chat_model))
 
@@ -108,7 +110,7 @@ class MemoryInjectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("A 更注重性能，B 更注重性价比", text)
 
         classifier_model = RecordingChatModel(responses=["general"])
-        classifier_module.llm = classifier_model
+        classifier_module.small_llm = classifier_model
         result = await classifier_module.support_classifier_node(state)
         text = prompt_text(classifier_model)
         self.assertEqual(result["support_intent"], "general")

@@ -1,4 +1,4 @@
-from app.agent.agent_config.llm_config import llm
+from app.agent.agent_config.llm_config import llm,small_llm
 from app.agent.memory import (
     get_memory_summary,
     get_recent_messages,
@@ -81,7 +81,7 @@ async def chat_node(state: SCRMState):
         MessagesPlaceholder(variable_name="chat_history")
     ])
 
-    chain = prompt | llm
+    chain = prompt | small_llm
 
     recent_messages = get_recent_messages(state)
 

@@ -25,7 +25,7 @@ from app.utils.logger_handler import get_logger
 
 
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(dotenv_path=ENV_PATH, override=False)
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 logger = get_logger("chat_runtime")
 
 
