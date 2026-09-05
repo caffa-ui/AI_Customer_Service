@@ -125,3 +125,49 @@ class TicketService:
             ),
             "ticket": ticket.to_public_dict(),
         }
+
+    async def create_refund_ticket(
+        self,
+        *,
+        user_id: str,
+        order_id: str,
+        subject: str,
+        description: str,
+        conversation_id: str,
+        refund_thread_id: str,
+    ) -> dict:
+        order_id = order_id.strip().upper()
+        if not user_id:
+            return {"ok": False, "error_code": "UNAUTHENTICATED", "message": "无法确认当前用户身份"}
+        if not order_id:
+            return {"ok": False, "error_code": "INVALID_ORDER_ID", "message": "退款申请必须提供订单号"}
+        try:
+            existing = await self.repository.find_pending_refund(user_id, order_id)
+            if existing is not None:
+                return {"ok": True, "created": False, "duplicate": True, "ticket": existing.to_admin_dict()}
+            ticket = await self.repository.create_refund(
+                user_id=user_id,
+                order_id=order_id,
+                subject=subject.strip()[:100],
+                description=description.strip()[:1000],
+                conversation_id=conversation_id,
+                refund_thread_id=refund_thread_id,
+            )
+        except Exception as exc:
+            logger.error("创建退款工单失败: error_type=%s", type(exc).__name__)
+            return {"ok": False, "error_code": "TICKET_BACKEND_ERROR", "message": "退款工单系统暂时不可用"}
+        return {"ok": True, "created": True, "ticket": ticket.to_admin_dict()}
+
+    async def list_refund_tickets(self, status: str | None = None) -> list[dict]:
+        tickets = await self.repository.list_refunds(status=status)
+        return [ticket.to_admin_dict() for ticket in tickets]
+
+    async def review_refund(self, ticket_id: str, reviewer_id: str, decision: str, review_note: str) -> dict:
+        if decision not in {"approved", "rejected"}:
+            return {"ok": False, "error_code": "INVALID_DECISION", "message": "审核结果必须是 approved 或 rejected"}
+        ticket = await self.repository.review_refund(
+            ticket_id.strip().upper(), reviewer_id, decision, review_note.strip()[:1000]
+        )
+        if ticket is None:
+            return {"ok": False, "error_code": "REFUND_NOT_FOUND", "message": "退款工单不存在"}
+        return {"ok": True, "ticket": ticket.to_admin_dict()}

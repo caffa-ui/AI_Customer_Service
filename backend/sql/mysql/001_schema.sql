@@ -121,6 +121,8 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     ticket_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     user_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     order_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    conversation_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    refund_thread_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL,
     ticket_type VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL,
     subject VARCHAR(100) NULL,
@@ -129,10 +131,14 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
         ON UPDATE CURRENT_TIMESTAMP(6),
+    reviewer_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    review_note VARCHAR(1000) NULL,
+    reviewed_at DATETIME(6) NULL,
     PRIMARY KEY (ticket_id),
     INDEX idx_support_tickets_user_created (user_id, created_at),
     INDEX idx_support_tickets_user_status (user_id, status),
     INDEX idx_support_tickets_order (order_id),
+    INDEX idx_support_tickets_refund_status (ticket_type, status, created_at),
     CONSTRAINT fk_support_tickets_user
         FOREIGN KEY (user_id) REFERENCES users (user_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,

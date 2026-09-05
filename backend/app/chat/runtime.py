@@ -20,6 +20,8 @@ from app.knowledge.factory import create_knowledge_repository
 from app.order.factory import create_order_repository
 from app.product.factory import create_product_repository
 from app.ticket.factory import create_ticket_repository
+from app.ticket.service import TicketService
+from app.agent.refund_workflow import build_refund_review_graph
 from app.user.factory import create_user_repository
 from app.utils.logger_handler import get_logger
 
@@ -33,6 +35,8 @@ logger = get_logger("chat_runtime")
 class RuntimeServices:
     chat_service: ChatService
     auth_service: AuthService | None = None
+    ticket_service: TicketService | None = None
+    refund_graph: object | None = None
 
 
 def _required_postgres_dsn() -> str:
@@ -136,6 +140,8 @@ async def _create_services(
                 user_repository,
             ),
             auth_service=auth_service,
+            ticket_service=TicketService(ticket_repository),
+            refund_graph=build_refund_review_graph(checkpointer=checkpointer),
         )
     finally:
         for repository in repositories:

@@ -45,11 +45,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     async with create_runtime_services() as services:
         app.state.chat_service = services.chat_service
         app.state.auth_service = services.auth_service
+        app.state.ticket_service = services.ticket_service
+        app.state.refund_graph = services.refund_graph
         try:
             yield
         finally:
             app.state.chat_service = None
             app.state.auth_service = None
+            app.state.ticket_service = None
+            app.state.refund_graph = None
 
 
 def create_app(*, lifespan_context: AppLifespan = lifespan) -> FastAPI:
