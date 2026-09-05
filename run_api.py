@@ -28,7 +28,7 @@ def _windows_selector_loop() -> asyncio.AbstractEventLoop:
 
 
 def main() -> None:
-    load_dotenv(dotenv_path=ENV_PATH, override=False)
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
     host = (os.getenv("API_HOST") or "127.0.0.1").strip()
     if not host:
         raise RuntimeError("API_HOST 不能为空")

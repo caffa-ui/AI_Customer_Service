@@ -9,7 +9,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from dotenv import load_dotenv
 from app.utils.config_handler import rag_config
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
+load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=True)
 
 logger = get_logger("gemini_embedding_factory")
 

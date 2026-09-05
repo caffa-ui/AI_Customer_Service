@@ -62,9 +62,11 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.original_supervisor_llm = supervisor_module.llm
+        self.original_chat_llm = supervisor_module.small_llm
 
     def tearDown(self):
         supervisor_module.llm = self.original_supervisor_llm
+        supervisor_module.small_llm = self.original_chat_llm
 
     @staticmethod
     def create_service(
@@ -95,9 +97,8 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
                 )
             }
         )
-        supervisor_module.llm = FakeListChatModel(
-            responses=["chat", "画像已加载"]
-        )
+        supervisor_module.llm = FakeListChatModel(responses=["chat"])
+        supervisor_module.small_llm = FakeListChatModel(responses=["画像已加载"])
         service = self.create_service(
             checkpointer,
             repository,
@@ -163,8 +164,9 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_same_conversation_recovers_state_after_service_rebuild(self):
         checkpointer = InMemorySaver()
         repository = InMemoryConversationRepository()
-        supervisor_module.llm = FakeListChatModel(
-            responses=["chat", "第一轮答复", "chat", "第二轮答复"]
+        supervisor_module.llm = FakeListChatModel(responses=["chat", "chat"])
+        supervisor_module.small_llm = FakeListChatModel(
+            responses=["第一轮答复", "第二轮答复"]
         )
 
         first_service = self.create_service(checkpointer, repository)
@@ -211,9 +213,8 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_different_conversations_do_not_share_messages(self):
         checkpointer = InMemorySaver()
         repository = InMemoryConversationRepository()
-        supervisor_module.llm = FakeListChatModel(
-            responses=["chat", "会话 A", "chat", "会话 B"]
-        )
+        supervisor_module.llm = FakeListChatModel(responses=["chat", "chat"])
+        supervisor_module.small_llm = FakeListChatModel(responses=["会话 A", "会话 B"])
         service = self.create_service(checkpointer, repository)
 
         await service.chat(
@@ -245,7 +246,8 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_conversation_cannot_be_accessed_by_another_user(self):
         checkpointer = InMemorySaver()
         repository = InMemoryConversationRepository()
-        supervisor_module.llm = FakeListChatModel(responses=["chat", "已创建"])
+        supervisor_module.llm = FakeListChatModel(responses=["chat"])
+        supervisor_module.small_llm = FakeListChatModel(responses=["已创建"])
         service = self.create_service(checkpointer, repository)
 
         await service.chat(
@@ -285,7 +287,8 @@ class PersistentChatServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_list_and_delete_conversation_include_checkpoint(self):
         checkpointer = InMemorySaver()
         repository = InMemoryConversationRepository()
-        supervisor_module.llm = FakeListChatModel(responses=["chat", "已创建"])
+        supervisor_module.llm = FakeListChatModel(responses=["chat"])
+        supervisor_module.small_llm = FakeListChatModel(responses=["已创建"])
         service = self.create_service(checkpointer, repository)
 
         await service.chat(
