@@ -83,7 +83,7 @@ async def run() -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv(BACKEND_DIR / ".env", override=False)
+    load_dotenv(BACKEND_DIR / ".env", override=True)
     try:
         if sys.platform == "win32":
             with asyncio.Runner(

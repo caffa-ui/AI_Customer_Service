@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool
 
-from app.agent.agent_config.llm_config import llm
+from app.agent.agent_config.llm_config import small_llm
 from app.agent.State.state import SCRMState
 from app.agent.memory import exclude_tools_content
 from app.utils.prompt_handler import load_rag_prompt
@@ -54,7 +54,7 @@ async def rag_determine_agent_node(state: SCRMState):
         ("human", "用户最新输入: {input}")
     ])
 
-    chain = prompt | llm
+    chain = prompt | small_llm
 
     response = await chain.ainvoke({
         "recent_content": recent_content,
@@ -97,7 +97,7 @@ async def rewrite_query_node(state: SCRMState):
         ("system",system_prompt)
         ])
 
-    chain = prompt | llm
+    chain = prompt | small_llm
 
     response = await chain.ainvoke({
         "question": query
@@ -142,7 +142,7 @@ async def grade_doucments_node(state: SCRMState):
         ("system", system_prompt)
     ])
 
-    chain = prompt | llm
+    chain = prompt | small_llm
 
     response = await chain.ainvoke({
         "qusetion": last_user_input,

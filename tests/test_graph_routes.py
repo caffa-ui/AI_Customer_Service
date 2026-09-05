@@ -96,7 +96,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["messages"][-1].content, "为您找到轻薄商务本 Air 14。")
 
     async def test_chat_route(self):
-        supervisor_module.llm = FakeListChatModel(responses=["chat", "chat-ok"])
+        supervisor_module.llm = FakeListChatModel(responses=["chat"])
+        supervisor_module.small_llm = FakeListChatModel(responses=["chat-ok"])
 
         result = await graph.ainvoke(self.state("你好"))
 
@@ -105,8 +106,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_general_support_route(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(responses=["no"])
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeListChatModel(responses=["support-ok"])
 
         result = await graph.ainvoke(self.state("请查询物流"))
@@ -116,7 +117,7 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_refund_route(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["refund"])
+        classifier_module.small_llm = FakeListChatModel(responses=["refund"])
 
         result = await graph.ainvoke(self.state("我要申请退款"))
 
@@ -125,8 +126,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_ticket_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(responses=["no"])
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -159,8 +160,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_order_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(responses=["no"])
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -190,8 +191,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_list_my_tickets_tool_loop(self):
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(responses=["no"])
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(responses=["no"])
         support_module.llm = ToolAwareFakeMessagesListChatModel(
             responses=[
                 AIMessage(
@@ -247,8 +248,8 @@ class GraphRouteTests(unittest.IsolatedAsyncioTestCase):
             knowledge_repository=knowledge_repository,
         )
         supervisor_module.llm = FakeListChatModel(responses=["support"])
-        classifier_module.llm = FakeListChatModel(responses=["general"])
-        rag_module.llm = FakeListChatModel(
+        classifier_module.small_llm = FakeListChatModel(responses=["general"])
+        rag_module.small_llm = FakeListChatModel(
             responses=["yes", "蓝牙耳机连接故障排查", "yes"]
         )
         support_module.llm = ToolAwareFakeListChatModel(responses=["rag-support-ok"])
