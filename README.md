@@ -315,17 +315,4 @@ python -m unittest discover -s tests -v
 ```
 
 路由测试使用本地假模型和 `tests/fakes/` 下的 Fake Repository，不会连接真实 MySQL，也不会调用 DeepSeek/Gemini。FastAPI 测试通过 lifespan 注入假的聊天和认证服务，验证登录、Bearer 身份、令牌刷新/重放拦截、退出、输入校验、会话 ID 和错误映射。原演示业务数据已迁移到 `tests/fixtures/`，仅供自动化测试使用，不会成为应用运行时的数据回退。
-
-## 当前边界
-
-- 退款目前为模拟人工审核流程：用户提交明确订单号后创建 `refund` 工单，并在独立的 `refund-*` LangGraph 线程中通过 `interrupt()` 等待审核；不会调用真实支付渠道。
-- 管理员可通过 `GET /api/v1/admin/refunds` 查看待审工单，并通过 `POST /api/v1/admin/refunds/{ticket_id}/review` 提交 `approved` 或 `rejected` 审核结果。默认管理员用户 ID 为 `admin`，可用 `ADMIN_USER_IDS` 配置。
-- 用户、商品、库存、促销、订单、物流和普通售后工单已经使用 MySQL；当前开发连接仍需从 `root` 更换为最小权限运行账号。
-- 售后知识只通过 Google Embedding 与 Chroma RAG 检索，不再使用静态 JSON 关键词知识库。
-- 应用层静态 Repository 与静态业务 JSON 已删除；自动化测试使用独立 Fake Repository 和 fixture。
-- PostgreSQL 已持久化主聊天和独立退款审核线程的图状态；当前审核结果通过管理员接口恢复退款线程，用户端可继续使用主聊天会话。
-- PostgreSQL 当前必须由部署者提前创建数据库；项目负责初始化 Checkpointer 表和会话归属表。
-- FastAPI 已提供网页、JWT 认证、会话管理、聊天、CORS、登录限流和独立 HTTP 日志；访问令牌即时吊销及多 worker 分布式协调尚未实现，当前不应直接暴露到公网。
-- `003_auth.sql` 不内置密码；首次登录前必须通过 `set_password.py` 为对应 MySQL 用户设置密码。
-- RAG 已通过 `search_support_knowledge` 接入售后工具循环，最终答案仍由售后智能体统一生成。
-- 真实 API 调用会产生模型费用，本次自动测试没有发起付费请求。
+ 
