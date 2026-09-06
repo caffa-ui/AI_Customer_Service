@@ -24,6 +24,9 @@ class SCRMState(TypedDict):
 
     support_intent: Optional[Literal["general", "refund"]]
     refund_status: Optional[Literal["pending", "approved", "rejected"]]
+    refund_ticket_id: str | None
+    refund_thread_id: str | None
+    conversation_id: str | None
 
     user_id: str
     user_name: Optional[str]

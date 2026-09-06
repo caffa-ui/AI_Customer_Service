@@ -6,7 +6,8 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
 
 from app.agent.State.state import SCRMState
-from app.agent.nodes.refund_ticket_node import refund_ticket_node
+from app.agent.nodes.refund_ticket_node import create_refund_ticket_node
+from app.agent.refund_workflow import build_refund_review_graph
 from app.agent.nodes.sale_node import create_sale_node
 from app.agent.nodes.summarize_node import MIN_TOKENS_TO_COMPRESS, summarize_node
 from app.agent.nodes.supervisor_and_chat_node import chat_node, supervisor_node
@@ -88,6 +89,9 @@ def build_graph(
         *create_ticket_tools(TicketService(ticket_repository)),
         *create_order_tools(OrderService(order_repository)),
     ]
+    ticket_service = TicketService(ticket_repository)
+    order_service = OrderService(order_repository)
+    refund_graph = build_refund_review_graph(checkpointer=checkpointer)
 
     builder = StateGraph(SCRMState)
 
@@ -111,7 +115,10 @@ def build_graph(
             handle_tool_errors="售后业务工具暂时不可用，请稍后重试。",
         ),
     )
-    builder.add_node("refund_ticket", refund_ticket_node)
+    builder.add_node(
+        "refund_ticket",
+        create_refund_ticket_node(ticket_service, order_service, refund_graph),
+    )
     builder.add_node("summarize", summarize_node)
     builder.add_node("rag_determine", rag_determine_agent_node)
     builder.add_node("agentic_rag", rag_build_graph(knowledge_repository))

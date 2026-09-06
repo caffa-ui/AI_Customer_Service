@@ -105,3 +105,13 @@ class ConversationHistoryResponse(BaseModel):
 
 class ConversationDeletedResponse(BaseModel):
     status: Literal["deleted"] = "deleted"
+
+
+class RefundReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    decision: Literal["approved", "rejected"]
+    review_note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class RefundReviewResponse(BaseModel):
+    ticket: dict

@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path as APIPath, Query, R
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
 from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.types import Command
 
 from app.api.schemas import (
     ChatRequest,
@@ -23,6 +25,8 @@ from app.api.schemas import (
     PasswordChangeRequest,
     RefreshTokenRequest,
     TokenResponse,
+    RefundReviewRequest,
+    RefundReviewResponse,
 )
 from app.auth.models import TokenPair
 from app.auth.service import (
@@ -68,6 +72,20 @@ def get_auth_service(request: Request) -> AuthService:
 
 def get_login_rate_limiter(request: Request) -> LoginRateLimiter:
     return request.app.state.login_rate_limiter
+
+
+def get_ticket_service(request: Request):
+    service = getattr(request.app.state, "ticket_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="退款服务尚未就绪")
+    return service
+
+
+def require_admin(user_id: str) -> str:
+    admins = {item.strip() for item in os.getenv("ADMIN_USER_IDS", "admin").split(",") if item.strip()}
+    if user_id not in admins:
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    return user_id
 
 
 ChatServiceDependency = Annotated[ChatService, Depends(get_chat_service)]
@@ -393,3 +411,37 @@ async def chat(
         ) from exc
 
     return ChatResponseBody.model_validate(response)
+
+
+@router.get("/api/v1/admin/refunds", tags=["admin"])
+async def list_refunds(
+    user_id: CurrentUserDependency,
+    request: Request,
+    status_filter: Annotated[str | None, Query(alias="status", pattern="^(pending|approved|rejected)$")] = None,
+) -> dict:
+    require_admin(user_id)
+    service = get_ticket_service(request)
+    return {"items": await service.list_refund_tickets(status_filter)}
+
+
+@router.post("/api/v1/admin/refunds/{ticket_id}/review", response_model=RefundReviewResponse, tags=["admin"])
+async def review_refund(
+    ticket_id: Annotated[str, APIPath(min_length=1, max_length=128)],
+    payload: RefundReviewRequest,
+    user_id: CurrentUserDependency,
+    request: Request,
+) -> RefundReviewResponse:
+    require_admin(user_id)
+    service = get_ticket_service(request)
+    result = await service.review_refund(ticket_id, user_id, payload.decision, payload.review_note)
+    if not result.get("ok"):
+        raise HTTPException(status_code=404, detail=result.get("message", "退款工单不存在"))
+    ticket = result["ticket"]
+    refund_graph = getattr(request.app.state, "refund_graph", None)
+    thread_id = ticket.get("refund_thread_id")
+    if refund_graph is not None and thread_id:
+        await refund_graph.ainvoke(
+            Command(resume={"decision": payload.decision, "review_note": payload.review_note}),
+            config={"configurable": {"thread_id": thread_id}},
+        )
+    return RefundReviewResponse(ticket=ticket)

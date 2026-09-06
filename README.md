@@ -318,11 +318,12 @@ python -m unittest discover -s tests -v
 
 ## 当前边界
 
-- 退款工单目前仅更新 LangGraph 状态，尚未写入真实数据库。
+- 退款目前为模拟人工审核流程：用户提交明确订单号后创建 `refund` 工单，并在独立的 `refund-*` LangGraph 线程中通过 `interrupt()` 等待审核；不会调用真实支付渠道。
+- 管理员可通过 `GET /api/v1/admin/refunds` 查看待审工单，并通过 `POST /api/v1/admin/refunds/{ticket_id}/review` 提交 `approved` 或 `rejected` 审核结果。默认管理员用户 ID 为 `admin`，可用 `ADMIN_USER_IDS` 配置。
 - 用户、商品、库存、促销、订单、物流和普通售后工单已经使用 MySQL；当前开发连接仍需从 `root` 更换为最小权限运行账号。
 - 售后知识只通过 Google Embedding 与 Chroma RAG 检索，不再使用静态 JSON 关键词知识库。
 - 应用层静态 Repository 与静态业务 JSON 已删除；自动化测试使用独立 Fake Repository 和 fixture。
-- PostgreSQL 已持久化图状态，但退款人工审核的 `interrupt/resume` 交互流程尚未实现。
+- PostgreSQL 已持久化主聊天和独立退款审核线程的图状态；当前审核结果通过管理员接口恢复退款线程，用户端可继续使用主聊天会话。
 - PostgreSQL 当前必须由部署者提前创建数据库；项目负责初始化 Checkpointer 表和会话归属表。
 - FastAPI 已提供网页、JWT 认证、会话管理、聊天、CORS、登录限流和独立 HTTP 日志；访问令牌即时吊销及多 worker 分布式协调尚未实现，当前不应直接暴露到公网。
 - `003_auth.sql` 不内置密码；首次登录前必须通过 `set_password.py` 为对应 MySQL 用户设置密码。

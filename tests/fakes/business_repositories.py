@@ -138,6 +138,32 @@ class FakeTicketRepository:
         self._tickets.append(ticket)
         return ticket
 
+    async def find_pending_refund(self, user_id: str, order_id: str):
+        return next((t for t in self._tickets if t.user_id == user_id and t.order_id == order_id and t.ticket_type == "refund" and t.status == "pending"), None)
+
+    async def create_refund(self, user_id, order_id, subject, description, conversation_id, refund_thread_id):
+        existing = await self.find_pending_refund(user_id, order_id)
+        if existing:
+            return existing
+        ticket = Ticket(ticket_id=f"TK-{self._next_ticket_number:05d}", user_id=user_id, ticket_type="refund", status="pending", created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"), latest_note="已提交，等待人工退款审核", subject=subject, description=description, order_id=order_id, conversation_id=conversation_id, refund_thread_id=refund_thread_id)
+        self._next_ticket_number += 1
+        self._tickets.append(ticket)
+        return ticket
+
+    async def list_refunds(self, status=None):
+        return [t for t in self._tickets if t.ticket_type == "refund" and (status is None or t.status == status)]
+
+    async def review_refund(self, ticket_id, reviewer_id, decision, review_note):
+        ticket = next((t for t in self._tickets if t.ticket_id == ticket_id), None)
+        if ticket is None or ticket.ticket_type != "refund" or ticket.status != "pending":
+            return ticket
+        ticket.status = decision
+        ticket.reviewer_id = reviewer_id
+        ticket.review_note = review_note
+        ticket.latest_note = review_note
+        ticket.reviewed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return ticket
+
     async def close(self) -> None:
         return None
 
