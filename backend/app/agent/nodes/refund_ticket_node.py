@@ -3,9 +3,10 @@ import re
 from langchain_core.messages import AIMessage, HumanMessage
 from app.agent.State.state import SCRMState
 from app.ticket.service import TicketService
+from app.order.service import OrderService
 
+def create_refund_ticket_node(ticket_service: TicketService, order_service: OrderService, refund_graph):
 
-def create_refund_ticket_node(ticket_service: TicketService, order_service, refund_graph):
     async def node(state: SCRMState):
         conversation_id = state.get("conversation_id") or "unknown"
         latest = next(
@@ -14,7 +15,8 @@ def create_refund_ticket_node(ticket_service: TicketService, order_service, refu
         )
         order_match = re.search(r"\bORD-[A-Za-z0-9_-]+\b", latest, re.IGNORECASE)
         order_id = order_match.group(0).upper() if order_match else ""
-        refund_thread_id = f"refund-{conversation_id}-{state.get('user_id', '')}"
+        refund_thread_id = f"refund-{conversation_id}-{state.get('user_id')}"
+
         if order_id:
             order_result = await order_service.query_order(order_id, state.get("user_id", ""))
             if not order_result.get("ok") or not order_result.get("found"):

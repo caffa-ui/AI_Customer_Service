@@ -22,7 +22,7 @@ class Ticket(BaseModel):
     reviewed_at: str | None = None
 
     def to_public_dict(self) -> dict:
-        """移除内部用户标识，只向智能体暴露必要工单字段。"""
+        """移除内部用户标识，只向智能体暴露必要工单字段"""
         return self.model_dump(
             exclude={
                 "user_id",
@@ -33,5 +33,5 @@ class Ticket(BaseModel):
         )
 
     def to_admin_dict(self) -> dict:
-        """管理员审核接口使用的完整工单信息。"""
+        """管理员审核接口使用的完整工单信息"""
         return self.model_dump(exclude={"user_id"})

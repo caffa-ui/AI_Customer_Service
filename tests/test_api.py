@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -11,12 +13,18 @@ from fastapi.testclient import TestClient
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
+from app.api.dependencies import (
+    get_chat_service,
+    get_current_user_id,
+    get_ticket_service,
+)
 from app.api.main import create_app
 from app.auth.models import TokenPair
 from app.auth.service import InvalidAuthTokenError, InvalidCredentialsError
 from app.chat.service import ChatResponse
 from app.conversation.models import Conversation
 from app.conversation.repository import ConversationAccessError
+from app.ticket.service import TicketService
 from app.user.repository import UserAccessError
 
 
@@ -347,6 +355,168 @@ class FastAPITests(unittest.TestCase):
         self.assertEqual(listing.json()["items"][0]["conversation_id"], "conversation-001")
         self.assertEqual([item["role"] for item in history.json()["messages"]], ["user", "assistant"])
         self.assertEqual(deleted.json(), {"status": "deleted"})
+
+    def test_router_paths_methods_tags_and_security_are_preserved(self):
+        expected = {
+            "/health": {"get": "system"},
+            "/ready": {"get": "system"},
+            "/api/v1/auth/token": {"post": "auth"},
+            "/api/v1/auth/refresh": {"post": "auth"},
+            "/api/v1/auth/logout": {"post": "auth"},
+            "/api/v1/auth/me": {"get": "auth"},
+            "/api/v1/auth/change-password": {"post": "auth"},
+            "/api/v1/conversations": {"get": "conversations"},
+            "/api/v1/conversations/{conversation_id}": {
+                "get": "conversations",
+                "delete": "conversations",
+            },
+            "/api/v1/chat": {"post": "chat"},
+            "/api/v1/admin/refunds": {"get": "admin"},
+            "/api/v1/admin/refunds/{ticket_id}/review": {"post": "admin"},
+        }
+        public_paths = {
+            "/health", "/ready", "/api/v1/auth/token",
+            "/api/v1/auth/refresh", "/api/v1/auth/logout",
+        }
+        schema = self.app.openapi()
+        self.assertEqual(set(schema["paths"]), set(expected))
+        for path, methods in expected.items():
+            self.assertEqual(set(schema["paths"][path]), set(methods))
+            for method, tag in methods.items():
+                with self.subTest(path=path, method=method):
+                    operation = schema["paths"][path][method]
+                    self.assertEqual(operation["tags"], [tag])
+                    if path in public_paths:
+                        self.assertNotIn("security", operation)
+                    else:
+                        self.assertEqual(
+                            operation["security"], [{"OAuth2PasswordBearer": []}]
+                        )
+        security = schema["components"]["securitySchemes"]["OAuth2PasswordBearer"]
+        self.assertEqual(
+            security["flows"]["password"]["tokenUrl"], "/api/v1/auth/token"
+        )
+
+    def test_router_prefixes_do_not_add_trailing_slash_redirects(self):
+        headers = {"Authorization": "Bearer access-1"}
+        with TestClient(self.app, follow_redirects=False) as client:
+            listing = client.get("/api/v1/conversations", headers=headers)
+            response = client.post(
+                "/api/v1/chat", json={"message": "你好"}, headers=headers
+            )
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+
+    def test_shared_dependencies_can_be_overridden_across_routers(self):
+        chat_service = FakeChatService()
+        self.app.dependency_overrides[get_current_user_id] = lambda: "override-user"
+        self.app.dependency_overrides[get_chat_service] = lambda: chat_service
+        with TestClient(self.app) as client:
+            current_user = client.get("/api/v1/auth/me")
+            listing = client.get("/api/v1/conversations")
+            response = client.post("/api/v1/chat", json={"message": "你好"})
+        self.assertEqual(current_user.json(), {"user_id": "override-user"})
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(chat_service.calls[0]["user_id"], "override-user")
+        self.assertEqual(self.chat_service.calls, [])
+
+    @patch.dict(os.environ, {"ADMIN_USER_IDS": "admin"})
+    def test_admin_routes_require_authentication_and_admin_role(self):
+        with TestClient(self.app) as client:
+            for method, path, options in (
+                ("GET", "/api/v1/admin/refunds", {}),
+                (
+                    "POST", "/api/v1/admin/refunds/TK-1/review",
+                    {"json": {"decision": "approved", "review_note": "同意退款"}},
+                ),
+            ):
+                with self.subTest(path=path):
+                    missing = client.request(method, path, **options)
+                    denied = client.request(
+                        method, path,
+                        headers={"Authorization": "Bearer access-1"},
+                        **options,
+                    )
+                    self.assertEqual(missing.status_code, 401)
+                    self.assertEqual(missing.headers["WWW-Authenticate"], "Bearer")
+                    self.assertEqual(denied.status_code, 403)
+                    self.assertEqual(denied.json(), {"detail": "需要管理员权限"})
+
+    @patch.dict(os.environ, {"ADMIN_USER_IDS": "cli-user"})
+    def test_admin_routes_return_503_when_ticket_service_is_unready(self):
+        headers = {"Authorization": "Bearer access-1"}
+        with TestClient(self.app) as client:
+            listing = client.get("/api/v1/admin/refunds", headers=headers)
+            review = client.post(
+                "/api/v1/admin/refunds/TK-1/review", headers=headers,
+                json={"decision": "approved", "review_note": "同意退款"},
+            )
+        for response in (listing, review):
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response.json(), {"detail": "退款服务尚未就绪"})
+
+    @patch.dict(os.environ, {"ADMIN_USER_IDS": " admin, cli-user "})
+    def test_admin_refund_list_uses_injected_service_and_status_alias(self):
+        service = Mock(spec=TicketService)
+        service.list_refund_tickets.return_value = [{"ticket_id": "TK-1"}]
+        self.app.dependency_overrides[get_ticket_service] = lambda: service
+        headers = {"Authorization": "Bearer access-1"}
+        with TestClient(self.app, follow_redirects=False) as client:
+            response = client.get(
+                "/api/v1/admin/refunds?status=pending", headers=headers
+            )
+            invalid = client.get(
+                "/api/v1/admin/refunds?status=invalid", headers=headers
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"items": [{"ticket_id": "TK-1"}]})
+        self.assertEqual(invalid.status_code, 422)
+        service.list_refund_tickets.assert_awaited_once_with("pending")
+
+    @patch.dict(os.environ, {"ADMIN_USER_IDS": "cli-user"})
+    def test_admin_review_preserves_identity_and_graph_resume(self):
+        ticket = {"ticket_id": "TK-1", "refund_thread_id": "refund-1"}
+        service = Mock(spec=TicketService)
+        service.review_refund.return_value = {"ok": True, "ticket": ticket}
+        refund_graph = Mock()
+        refund_graph.ainvoke = AsyncMock(return_value={})
+        self.app.state.ticket_service = service
+        self.app.state.refund_graph = refund_graph
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/v1/admin/refunds/TK-1/review",
+                headers={"Authorization": "Bearer access-1"},
+                json={"decision": "approved", "review_note": " 同意退款 "},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ticket": ticket})
+        service.review_refund.assert_awaited_once_with(
+            "TK-1", "cli-user", "approved", "同意退款"
+        )
+        refund_graph.ainvoke.assert_awaited_once()
+        invocation = refund_graph.ainvoke.await_args
+        self.assertEqual(
+            invocation.args[0].resume,
+            {"decision": "approved", "review_note": "同意退款"},
+        )
+        self.assertEqual(
+            invocation.kwargs["config"], {"configurable": {"thread_id": "refund-1"}}
+        )
+
+    @patch.dict(os.environ, {"ADMIN_USER_IDS": "cli-user"})
+    def test_admin_review_preserves_missing_ticket_response(self):
+        service = Mock(spec=TicketService)
+        service.review_refund.return_value = {"ok": False, "message": "退款工单不存在"}
+        self.app.state.ticket_service = service
+        with TestClient(self.app) as client:
+            response = client.post(
+                "/api/v1/admin/refunds/TK-missing/review",
+                headers={"Authorization": "Bearer access-1"},
+                json={"decision": "rejected", "review_note": "工单不存在"},
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"detail": "退款工单不存在"})
 
     def test_request_body_limit(self):
         with TestClient(self.app) as client:

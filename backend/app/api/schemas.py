@@ -41,6 +41,8 @@ class HealthResponse(BaseModel):
 
 
 class TokenResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     access_token: str
     refresh_token: str
     token_type: Literal["bearer"] = "bearer"
@@ -70,7 +72,7 @@ class PasswordChangeRequest(BaseModel):
 
     current_password: Annotated[
         str,
-        StringConstraints(min_length=1, max_length=256),
+        StringConstraints(min_length=12, max_length=128),
     ]
     new_password: Annotated[
         str,

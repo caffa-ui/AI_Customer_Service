@@ -4,7 +4,7 @@ import time
 
 
 class LoginRateLimiter:
-    """单进程登录失败限流；与当前固定单 worker 部署边界一致。"""
+    """单进程登录失败限流；与当前固定单worker部署边界一致"""
 
     def __init__(self, *, max_attempts: int, window_seconds: int):
         self.max_attempts = max_attempts

@@ -16,7 +16,7 @@ class RefundReviewState(TypedDict, total=False):
 
 
 def refund_review_node(state: RefundReviewState):
-    """暂停在人工审核点；恢复时接收管理员的 decision/review_note。"""
+    """暂停在人工审核点；恢复时接收管理员的review_note"""
     review = interrupt(
         {
             "type": "refund_review",
